@@ -1,9 +1,10 @@
 import pygame as pg
 import random
+import math
 pg.init()
 
 back = (0, 0, 0)
-DISPLAY_WIDTH = 800
+DISPLAY_WIDTH = 900
 DISPLAY_HEIGHT = 600
 nrows = 20
 ncols = 20 
@@ -16,8 +17,34 @@ running = True
 clock = pg.time.Clock()
 start_ticks = pg.time.get_ticks()
 
+fontSize = 64
+font = pg.font.SysFont(name = 'freesansbold',size = fontSize)
 
 
+
+
+def draw_arrow(screen, colour, start, end, thickness):
+    pg.draw.line(screen,colour,start,end, thickness)
+    rotation = math.degrees(math.atan2(start[1]-end[1], end[0]-start[0]))+90
+    pg.draw.polygon(screen, colour, ((end[0]+20*math.sin(math.radians(rotation)), end[1]+20*math.cos(math.radians(rotation))), (end[0]+20*math.sin(math.radians(rotation-120)), end[1]+20*math.cos(math.radians(rotation-120))), (end[0]+20*math.sin(math.radians(rotation+120)), end[1]+20*math.cos(math.radians(rotation+120)))))
+
+def drawDirection(screen, colour, pos, width, active_arrows = [0, 0, 0, 0], active_colour = (255, 0, 0)):
+    # Trên dưới trái phải
+    for i in (-1, 1):
+        if active_arrows[i + 1] == 1:
+            draw_arrow(screen, active_colour, (pos[0], i * 20 + pos[1]), (pos[0], i * (width + 20) + pos[1]), 20)
+        else:
+            draw_arrow(screen, colour, (pos[0], i * 20 + pos[1]), (pos[0], i * (width + 20) + pos[1]), 20)
+    
+    for i in (-1, 1):
+        if active_arrows[i + 2] == 1:
+            draw_arrow(screen, active_colour, (i * 20 + pos[0], pos[1]), (i * (width + 20) + pos[0], pos[1]), 20)
+        else:
+            draw_arrow(screen, colour, (i * 20 + pos[0], pos[1]), (i * (width + 20) + pos[0], pos[1]), 20)
+
+def draw_text(text,x,y,color):
+    label = font.render(text, True, color)
+    gameDisplay.blit(label, (x,y))
 
 def drawGrid():
     for i in range(nrows + 1):
@@ -37,7 +64,7 @@ class Node():
 
 class Snake():
     def __init__(self) -> None:
-        self.body = [Node((0,255,0))]
+        self.body = [Node((0,180,0))]
         self.direction = "R"
         self.width = grid_val
     def spawn(self):
@@ -59,6 +86,7 @@ class Snake():
             self.body[0].xpos -= self.width
         if self.direction == "R":
             self.body[0].xpos += self.width
+
     def turn(self, type):
         if type == "U" and self.direction != "D":
             self.direction = "U"
@@ -116,25 +144,31 @@ while running:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             running = False
-        
+    
+    draw_text("Score: " + "{:04n}".format(score), 620, 100, (255,255,255))
     pg.display.flip()
+    keys = pg.key.get_pressed()
+    directions = [0 ,0, 0, 0]
+    if keys[pg.K_UP]:
+        snake.turn("U")
+        directions[0] = 1
+    if keys[pg.K_DOWN]:
+        snake.turn("D")
+        directions[1] = 1
+    if keys[pg.K_LEFT]:
+        snake.turn("L")
+        directions[2] = 1
+    if keys[pg.K_RIGHT]:
+        snake.turn("R")
+        directions[3] = 1
+    drawDirection(gameDisplay, (255, 255, 255), (750, 400), 30, directions)
     if dt >= 0.08:
-        keys = pg.key.get_pressed()
-        if keys[pg.K_UP]:
-            snake.turn("U")
-        if keys[pg.K_DOWN]:
-            snake.turn("D")
-        if keys[pg.K_LEFT]:
-            snake.turn("L")
-        if keys[pg.K_RIGHT]:
-            snake.turn("R")
-
         gameDisplay.fill(back)
         drawGrid()
-        if snake.checkApplecollision(apple.xpos, apple.ypos): apple.spawn_aftereaten(snake.body)
         apple.draw()
         snake.move()
-        if snake.checkWallcollision(): running = False
         snake.draw()
+        if snake.checkApplecollision(apple.xpos, apple.ypos): apple.spawn_aftereaten(snake.body)
+        if snake.checkWallcollision(): running = False
         start_ticks = seconds_ticks
 
