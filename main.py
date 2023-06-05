@@ -11,9 +11,10 @@ ncols = 20
 grid_val = DISPLAY_HEIGHT / nrows
 score = 0
 gameDisplay = pg.display.set_mode((DISPLAY_WIDTH,DISPLAY_HEIGHT))
-pg.display.set_caption('Snake AI')
+pg.display.set_caption('Snake')
 gameDisplay.fill(back)
 running = True
+losed = False
 clock = pg.time.Clock()
 start_ticks = pg.time.get_ticks()
 
@@ -68,8 +69,8 @@ class Snake():
         self.direction = "R"
         self.width = grid_val
     def spawn(self):
-        self.body[0].xpos = 30
-        self.body[0].ypos = 30
+        self.body[0].xpos = 4 * grid_val
+        self.body[0].ypos = 10 * grid_val
         self.body.append(Node((0, 255, 0)))
     def draw(self):
         for node in self.body:
@@ -137,6 +138,13 @@ snake = Snake()
 apple = Apple()
 snake.spawn()
 apple.spawn_first()
+def restartGame():
+    global snake, apple, score
+    snake = Snake()
+    apple = Apple()
+    snake.spawn()
+    apple.spawn_first()
+    score = 0
 while running:
     seconds_ticks = pg.time.get_ticks()
     dt=(seconds_ticks-start_ticks)/1000
@@ -169,6 +177,8 @@ while running:
         snake.move()
         snake.draw()
         if snake.checkApplecollision(apple.xpos, apple.ypos): apple.spawn_aftereaten(snake.body)
-        if snake.checkWallcollision(): running = False
+        if snake.checkWallcollision(): 
+            restartGame()
+            continue
         start_ticks = seconds_ticks
-
+    clock.tick()
